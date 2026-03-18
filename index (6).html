@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>levobaanh</title>
+  <link rel="icon" href="https://api.lanyard.rest/905628589712609310.png">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Fira+Code:wght@300;400;500&family=Noto+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root {
+  --bg: #06060d;
+  --surface: #0d0d18;
+  --surface2: #11111f;
+  --border: rgba(255,255,255,0.06);
+  --border2: rgba(255,255,255,0.12);
+  --accent: #7b6fff;
+  --accent2: #ff6eb4;
+  --text: #e2e0f0;
+  --muted: #5a5870;
+  --online: #23d18b;
+  --r: 16px;
+}
+
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
+html, body { min-height:100vh; background:var(--bg); }
+body { font-family:'Noto Sans',sans-serif; color:var(--text); overflow-x:hidden; cursor:none; min-height:100vh; }
+
+/* Video BG */
+.video-bg { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+.video-bg video { width:100%; height:100%; object-fit:cover; opacity:0.45; filter:brightness(0.6); }
+.video-bg::after { content:''; position:absolute; inset:0; background:rgba(6,6,13,0.4); }
+
+/* Cursor */
+#cursor { position:fixed; width:10px; height:10px; background:var(--accent); border-radius:50%; pointer-events:none; z-index:99999; transform:translate(-50%,-50%); mix-blend-mode:screen; }
+#cursor-ring { position:fixed; width:26px; height:26px; border:1.5px solid rgba(123,111,255,0.5); border-radius:50%; pointer-events:none; z-index:99998; transform:translate(-50%,-50%); transition:left .08s,top .08s; }
+
+/* Splash */
+#splash { position:fixed; inset:0; z-index:9999999; background:#06060d; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:none; gap:16px; transition:opacity 0.6s ease; }
+#splash.hide { opacity:0; pointer-events:none; }
+#splash img { width:84px; height:84px; border-radius:50%; border:2px solid rgba(200,210,240,0.2); box-shadow:0 0 30px rgba(123,111,255,0.2); object-fit:cover; animation:float 3s ease-in-out infinite; }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+#splash-title { font-family:'Rajdhani',sans-serif; font-size:2.4rem; font-weight:700; letter-spacing:.2em; color:#fff; text-shadow:0 0 30px rgba(123,111,255,0.6); }
+#splash-sub { font-family:'Fira Code',monospace; font-size:.75rem; color:rgba(255,255,255,0.25); letter-spacing:.12em; animation:blink 1.5s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.1} }
+
+/* Layout */
+.main-wrapper { position:relative; z-index:1; padding:16px; min-height:100vh; display:flex; flex-direction:column; }
+.container { max-width:1280px; margin:0 auto; width:100%; flex:1; display:flex; flex-direction:column; }
+.bento-grid { display:grid; grid-template-columns:1fr 0.85fr; gap:14px; align-items:stretch; flex:1; }
+@media(max-width:860px) { .bento-grid { grid-template-columns:1fr; } }
+
+/* Card base */
+.common-card-style {
+  background:rgba(13,13,24,0.55);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  overflow:hidden;
+  transition:border-color .3s,transform .25s,box-shadow .25s;
+  animation:fadeup .55s ease both;
+}
+.common-card-style:hover { border-color:var(--border2); transform:translateY(-2px); box-shadow:0 12px 36px rgba(0,0,0,0.4); }
+@keyframes fadeup { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── DISCORD CARD ── */
+.discord-card-container { display:flex; flex-direction:column; }
+.discord-header-wrapper { position:relative; }
+.discord-banner { height:180px; background:linear-gradient(135deg,#1a0f2e,#0d1a3c,#0a1a14); position:relative; overflow:hidden; }
+.discord-banner img { width:100%; height:100%; object-fit:cover; display:block; }
+
+.discord-avatar-wrapper { position:absolute; bottom:-38px; left:20px; display:flex; align-items:flex-end; gap:0; }
+.avatar-border { width:80px; height:80px; border-radius:50%; border:4px solid var(--surface); overflow:hidden; position:relative; z-index:2; background:var(--bg); }
+.avatar-border img { width:100%; height:100%; object-fit:cover; display:block; }
+.avatar-decoration { position:absolute; width:108px; height:108px; bottom:-14px; left:-14px; z-index:3; pointer-events:none; }
+.status-icon-box { width:18px; height:18px; border-radius:50%; background:#80848e; border:3.5px solid var(--surface); position:absolute; bottom:-32px; left:74px; z-index:4; }
+.status-icon-box.online { background:var(--online); }
+.status-icon-box.idle { background:#f5a623; }
+.status-icon-box.dnd { background:#f04747; }
+
+.discord-body-wrapper { padding:54px 20px 20px; flex:1; display:flex; flex-direction:column; }
+.display-name { font-family:'Rajdhani',sans-serif; font-size:1.6rem; font-weight:700; color:#fff; letter-spacing:.04em; }
+.username-row { display:flex; align-items:center; gap:6px; margin-top:3px; flex-wrap:wrap; }
+.username { font-family:'Fira Code',monospace; font-size:.72rem; color:var(--muted); }
+.dot { color:var(--muted); }
+.pronouns-text { font-size:.72rem; color:var(--muted); background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:20px; border:0.5px solid var(--border2); }
+
+.poetry-and-counter-row { display:flex; justify-content:space-between; align-items:flex-end; margin-top:14px; gap:12px; }
+.poetry-box { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:10px 14px; flex:1; }
+.poetry-box p { font-size:.78rem; color:rgba(220,215,240,0.7); line-height:1.6; font-style:italic; }
+.poetry-box p:last-child { color:rgba(123,111,255,0.7); margin-top:4px; font-style:normal; font-size:.7rem; }
+.moe-counter-wrapper { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.moe-text { font-family:'Fira Code',monospace; font-size:.58rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
+#moe-img { height:22px; opacity:.85; }
+
+/* Bottom split */
+.bottom-split-container { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; flex:1; }
+.discord-section { }
+.section-header { font-family:'Fira Code',monospace; font-size:.6rem; text-transform:uppercase; letter-spacing:.18em; color:var(--muted); margin-bottom:10px; display:flex; align-items:center; gap:5px; }
+.section-header::before { content:'✦'; color:var(--accent); font-size:.5rem; }
+
+.activity-card { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:11px 13px; min-height:56px; font-size:.8rem; color:rgba(220,215,240,0.6); }
+
+/* Games */
+.favorite-games-card { display:flex; gap:8px; flex-wrap:wrap; }
+.game-wrapper { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:8px; cursor:default; transition:all .2s; position:relative; }
+.game-wrapper:hover { border-color:rgba(123,111,255,0.4); transform:translateY(-3px); }
+.game-wrapper img { width:48px; height:48px; border-radius:8px; display:block; object-fit:cover; }
+.game-wrapper::after { content:attr(data-name); position:absolute; bottom:calc(100%+5px); left:50%; transform:translateX(-50%); background:var(--surface2); border:1px solid var(--border2); color:var(--text); font-size:.62rem; padding:3px 8px; border-radius:5px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .2s; }
+.game-wrapper:hover::after { opacity:1; }
+
+/* Feedback */
+.feedback-card { display:flex; flex-direction:column; gap:8px; }
+#secret-msg { width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:8px; padding:9px 11px; color:var(--text); font-size:.8rem; font-family:'Noto Sans',sans-serif; resize:none; outline:none; height:80px; flex:1; transition:border-color .2s; }
+#secret-msg:focus { border-color:rgba(123,111,255,0.5); }
+#secret-msg::placeholder { color:var(--muted); }
+.feedback-btn { background:linear-gradient(135deg,#5a4fff,#7b6fff); border:none; border-radius:8px; padding:9px; color:#fff; cursor:pointer; font-size:.75rem; font-weight:700; letter-spacing:.1em; font-family:'Noto Sans',sans-serif; transition:all .2s; }
+.feedback-btn:hover { opacity:.85; transform:scale(1.02); }
+
+/* ── RIGHT COLUMN ── */
+.right-column { display:flex; flex-direction:column; gap:14px; }
+.right-column .common-card-style:nth-child(1) { animation-delay:.06s; }
+.right-column .common-card-style:nth-child(2) { animation-delay:.12s; }
+.right-column .common-card-style:nth-child(3) { animation-delay:.18s; }
+.right-column .common-card-style:nth-child(4) { animation-delay:.24s; }
+
+/* Clock */
+.clock-card { padding:20px; text-align:center; position:relative; }
+.clock-bg-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.06; pointer-events:none; }
+.clock-content { position:relative; z-index:1; }
+.time-display { font-family:'Rajdhani',sans-serif; font-size:3rem; font-weight:700; color:#fff; letter-spacing:.12em; line-height:1; text-shadow:0 0 24px rgba(123,111,255,0.4); }
+.time-display span { font-size:1.7rem; color:var(--accent); opacity:.75; }
+.date-display { font-family:'Fira Code',monospace; font-size:.65rem; color:var(--muted); margin-top:5px; text-transform:uppercase; letter-spacing:.1em; }
+
+/* Bio */
+.bio-card { padding:20px; position:relative; }
+.card-bg-gif { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.06; pointer-events:none; }
+.bio-content { position:relative; z-index:1; }
+.bio-header-widget { font-family:'Fira Code',monospace; font-size:.6rem; text-transform:uppercase; letter-spacing:.18em; color:var(--accent); margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+.bio-description { font-size:.86rem; line-height:1.8; color:rgba(220,215,240,0.82); }
+.bio-description strong { color:#fff; font-weight:500; }
+
+/* Connections */
+.connect-card { padding:20px; }
+.connect-card h3 { font-family:'Fira Code',monospace; font-size:.6rem; text-transform:uppercase; letter-spacing:.18em; color:var(--muted); margin-bottom:12px; }
+.social-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.social-btn { display:flex; align-items:center; gap:8px; padding:10px 12px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:.78rem; font-weight:500; letter-spacing:.05em; transition:all .2s; }
+.social-btn:hover { background:rgba(255,255,255,0.06); border-color:var(--border2); transform:translateX(3px); }
+
+/* Skills */
+.skills-wrapper-card { padding:20px; }
+.skills-wrapper-card h3 { font-family:'Fira Code',monospace; font-size:.6rem; text-transform:uppercase; letter-spacing:.18em; color:var(--muted); margin-bottom:14px; }
+.skills-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.skill-box { }
+.skill-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.skill-name { font-size:.8rem; font-weight:500; color:var(--text); display:flex; align-items:center; gap:5px; }
+.percent-text { font-family:'Fira Code',monospace; font-size:.65rem; color:var(--muted); }
+.progress-bg { height:4px; background:rgba(255,255,255,0.06); border-radius:4px; overflow:hidden; }
+.progress-fill { height:100%; border-radius:4px; }
+
+/* Overlay floats */
+.overlay-container { position:fixed; inset:0; pointer-events:none; z-index:2; }
+.float-img { position:absolute; animation:floatanim 5s ease-in-out infinite; }
+.pos-q1 { bottom:0; left:0; width:220px; animation-delay:0s; }
+.pos-q3 { bottom:0; right:0; width:220px; animation-delay:1.5s; transform:scaleX(-1); }
+.pos-q4 { top:30px; right:20px; width:130px; animation-delay:3s; }
+@keyframes floatanim { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+.pos-q3 { animation-name:floatanim3; }
+@keyframes floatanim3 { 0%,100%{transform:scaleX(-1) translateY(0)} 50%{transform:scaleX(-1) translateY(-12px)} }
+
+/* Snow canvas */
+#pinkSnowCanvas { position:fixed; inset:0; pointer-events:none; z-index:1; opacity:0.6; }
+
+/* Music widget */
+.music-widget { position:fixed; bottom:22px; right:22px; z-index:1000; display:flex; align-items:center; gap:8px; }
+.music-btn { width:44px; height:44px; background:rgba(13,13,24,0.8); border:1px solid var(--border2); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--muted); font-size:.9rem; transition:all .2s; }
+.music-btn:hover, .music-btn.playing { color:var(--accent); border-color:rgba(123,111,255,0.5); }
+.music-btn.playing { animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(123,111,255,0.3)} 50%{box-shadow:0 0 0 8px rgba(123,111,255,0)} }
+.volume-panel { background:rgba(13,13,24,0.85); border:1px solid var(--border2); border-radius:30px; padding:8px 14px; display:flex; align-items:center; gap:8px; opacity:0; pointer-events:none; transform:translateX(10px); transition:all .25s; }
+.volume-panel.visible { opacity:1; pointer-events:auto; transform:translateX(0); }
+.vol-icon { color:var(--muted); font-size:.8rem; }
+.vol-slider { -webkit-appearance:none; width:90px; height:3px; background:rgba(255,255,255,0.1); border-radius:3px; outline:none; cursor:pointer; }
+.vol-slider::-webkit-slider-thumb { -webkit-appearance:none; width:13px; height:13px; border-radius:50%; background:var(--accent); cursor:pointer; }
+.vol-pct { font-family:'Fira Code',monospace; font-size:.6rem; color:var(--muted); min-width:28px; }
+
+/* Copyright */
+.copyright { text-align:center; font-family:'Fira Code',monospace; font-size:.6rem; color:var(--muted); letter-spacing:.1em; margin-top:24px; opacity:.5; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(123,111,255,0.25); border-radius:2px; }
+</style>
+</head>
+<body>
+
+<!-- Video wallpaper -->
+<div class="video-bg">
+  <video autoplay muted loop playsinline>
+    <source src="https://raw.githubusercontent.com/levobaanh/x/refs/heads/main/snaptik.vn_c7EpA%20(1).mp4" type="video/mp4">
+  </video>
+</div>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- Splash -->
+<div id="splash">
+  <img id="splash-avt" src="https://api.lanyard.rest/905628589712609310.png" alt="avt" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+  <div id="splash-title">levobaanh</div>
+  <div id="splash-sub">[ click anywhere to enter ]</div>
+</div>
+
+<div class="main-wrapper">
+  <div class="container">
+    <div class="bento-grid">
+
+      <!-- ── LEFT: Discord card ── -->
+      <div class="discord-card-container common-card-style">
+        <div class="discord-header-wrapper">
+          <div class="discord-banner" id="discord-banner">
+            <canvas id="banner-canvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+            <img id="banner-img" alt="" onload="this.style.opacity=1" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .5s;">
+          </div>
+          <div class="discord-avatar-wrapper">
+            <div class="avatar-border">
+              <img id="discord-avatar" src="https://api.lanyard.rest/905628589712609310.png" alt="avt" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+            </div>
+            <div class="status-icon-box" id="status-icon"></div>
+          </div>
+        </div>
+
+        <div class="discord-body-wrapper">
+          <div class="discord-name-box">
+            <div class="display-name" id="discord-displayname">levobaanh</div>
+            <div class="username-row">
+              <span class="username" id="discord-username">@levobaanh</span>
+              <span class="dot">•</span>
+              <span class="pronouns-text">Dev / Blox Fruit Player</span>
+            </div>
+            <div class="poetry-and-counter-row">
+              <div class="poetry-box">
+                <p id="typing-p" style="min-height:1.4em;"><span id="typing-text"></span><span style="display:inline-block;width:2px;height:1em;background:var(--accent);margin-left:1px;vertical-align:text-bottom;animation:blink .8s infinite;"></span></p>
+              </div>
+              <div class="moe-counter-wrapper">
+                <div class="moe-text">Views</div>
+                <img id="moe-img" alt="views" src="https://count.getloli.com/get/@levobaanh-profile?theme=rule34&padding=0&offset=0&darkmode=0">
+              </div>
+            </div>
+          </div>
+
+          <div class="bottom-split-container">
+            <div id="activity-section" class="discord-section">
+              <h3 class="section-header">Playing</h3>
+              <div class="activity-card" id="activity-card">
+                <span style="font-family:'Fira Code',monospace;font-size:.65rem;color:var(--muted);font-style:italic;">Không có hoạt động...</span>
+              </div>
+            </div>
+
+            <div id="favorite-games-section" class="discord-section">
+              <h3 class="section-header">Favorite Games</h3>
+              <div class="favorite-games-card">
+                <div class="game-wrapper" data-name="Roblox"><img src="https://raw.githubusercontent.com/levobaanh/g/main/Roblox_Logo_2021.png" alt="Roblox"></div>
+                <div class="game-wrapper" data-name="Valorant"><img src="https://raw.githubusercontent.com/levobaanh/g/main/image0.jpg" alt="Valorant"></div>
+                <div class="game-wrapper" data-name="Garena"><img src="https://raw.githubusercontent.com/levobaanh/g/main/images.jpg" alt="Garena"></div>
+              </div>
+            </div>
+
+            <div id="listening-section" class="discord-section" style="display:flex;flex-direction:column;">
+              <h3 class="section-header">Listening to Spotify</h3>
+              <div class="activity-card" id="listening-card">
+                <span style="font-family:'Fira Code',monospace;font-size:.65rem;color:var(--muted);font-style:italic;">Chưa nghe gì...</span>
+              </div>
+            </div>
+
+            <div id="feedback-section" class="discord-section" style="display:flex;flex-direction:column;">
+              <h3 class="section-header">Hi cutie &lt;3</h3>
+              <div class="feedback-card">
+                <textarea id="secret-msg" placeholder="Send anything you want, I will read all"></textarea>
+                <button id="send-secret-btn" class="feedback-btn" onclick="sendMsg()">SEND</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── RIGHT COLUMN ── -->
+      <div class="right-column">
+
+        <!-- Clock -->
+        <div class="clock-card common-card-style">
+          <div class="clock-content">
+            <div class="time-display" id="clock">00:00<span id="csec">:00</span></div>
+            <div class="date-display" id="date">LOADING...</div>
+          </div>
+        </div>
+
+        <!-- Bio / Introduce -->
+        <div class="bio-card common-card-style" style="flex:1;">
+          <div class="bio-content">
+            <div class="bio-header-widget"><i class="fas fa-terminal"></i> Introduce</div>
+            <div class="bio-description">
+              Chào cậu! Mình là <strong>levobaanh</strong> — một người sống hoà đồng và vui vẻ. 😄<br><br>
+              Mình thích kết bạn với tất cả mọi người, không phán xét, không drama. Luôn sẵn sàng nói chuyện và chill cùng nhau.
+            </div>
+          </div>
+        </div>
+
+        <!-- Connections -->
+        <div class="connect-card common-card-style">
+          <h3>Connections</h3>
+          <div class="social-grid">
+            <a href="https://www.facebook.com/share/1D99kMWUsB/" class="social-btn" target="_blank"><i class="fab fa-facebook" style="color:#1877F2"></i> FACEBOOK</a>
+            <a href="https://www.tiktok.com/@levobaanh" class="social-btn" target="_blank"><i class="fab fa-tiktok"></i> TIKTOK</a>
+            <a href="https://discord.com/users/905628589712609310" class="social-btn" target="_blank"><i class="fab fa-discord" style="color:#5865F2"></i> DISCORD</a>
+            <a href="https://open.spotify.com/user/31kyazxyow2spiinw3rxiafsv7qu" class="social-btn" target="_blank"><i class="fab fa-spotify" style="color:#1db954"></i> SPOTIFY</a>
+          </div>
+        </div>
+
+        <!-- Skills -->
+        <div class="skills-wrapper-card common-card-style" style="flex:1;">
+          <h3>Learning</h3>
+          <div class="skills-grid">
+            <div class="skill-box">
+              <div class="skill-top"><div class="skill-name"><i class="fab fa-html5" style="color:#e34f26"></i> HTML</div><span class="percent-text">40%</span></div>
+              <div class="progress-bg"><div class="progress-fill" style="width:40%;background:#e34f26"></div></div>
+            </div>
+            <div class="skill-box">
+              <div class="skill-top"><div class="skill-name"><i class="fab fa-css3-alt" style="color:#264de4"></i> CSS</div><span class="percent-text">30%</span></div>
+              <div class="progress-bg"><div class="progress-fill" style="width:30%;background:#264de4"></div></div>
+            </div>
+            <div class="skill-box">
+              <div class="skill-top"><div class="skill-name"><i class="fab fa-js" style="color:#f7df1e"></i> JS</div><span class="percent-text">20%</span></div>
+              <div class="progress-bg"><div class="progress-fill" style="width:20%;background:#f7df1e"></div></div>
+            </div>
+            <div class="skill-box">
+              <div class="skill-top"><div class="skill-name"><i class="fas fa-code" style="color:#7090ff"></i> Lua</div><span class="percent-text">60%</span></div>
+              <div class="progress-bg"><div class="progress-fill" style="width:60%;background:#7090ff"></div></div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /right-column -->
+
+    </div>
+  </div>
+  <div class="copyright">© 2026 levobaanh</div>
+</div>
+
+<!-- Floating chars -->
+<div class="overlay-container">
+  <img src="https://raw.githubusercontent.com/levobaanh/g/main/hd.png" class="float-img pos-q1" alt="" onerror="this.style.display='none'">
+  <img src="https://raw.githubusercontent.com/levobaanh/g/main/hd1.png" class="float-img pos-q3" alt="" onerror="this.style.display='none'">
+</div>
+
+<canvas id="pinkSnowCanvas"></canvas>
+
+<!-- Music -->
+<div class="music-widget">
+  <div class="volume-panel" id="volume-panel">
+    <i class="fas fa-volume-down vol-icon"></i>
+    <input type="range" class="vol-slider" id="vol-slider" min="0" max="100" value="60" oninput="setVol(this.value)">
+    <span class="vol-pct" id="vol-pct">60%</span>
+  </div>
+  <div class="music-btn paused" id="music-btn" onclick="toggleMusic()">
+    <i class="fas fa-music"></i>
+  </div>
+</div>
+
+<script>
+// Cursor
+const c1=document.getElementById('cursor'),c2=document.getElementById('cursor-ring');
+document.addEventListener('mousemove',e=>{
+  c1.style.left=e.clientX+'px';c1.style.top=e.clientY+'px';
+  setTimeout(()=>{c2.style.left=e.clientX+'px';c2.style.top=e.clientY+'px';},60);
+});
+
+// Splash
+document.getElementById('splash').addEventListener('click',()=>{
+  document.getElementById('splash').classList.add('hide');
+});
+
+// Clock
+function tick(){
+  const n=new Date();
+  document.getElementById('clock').childNodes[0].textContent=
+    String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+  document.getElementById('csec').textContent=':'+String(n.getSeconds()).padStart(2,'0');
+  document.getElementById('date').textContent=
+    n.toLocaleDateString('vi-VN',{weekday:'long',year:'numeric',month:'long',day:'numeric'}).toUpperCase();
+}
+tick();setInterval(tick,1000);
+
+// Snow
+const sc=document.getElementById('pinkSnowCanvas'),sx=sc.getContext('2d');
+let W,H,flakes=[];
+function rsz(){W=sc.width=window.innerWidth;H=sc.height=window.innerHeight;}
+rsz();window.addEventListener('resize',rsz);
+for(let i=0;i<60;i++)flakes.push({x:Math.random()*2000,y:Math.random()*2000,r:Math.random()*2.5+.5,s:Math.random()*1+.3,a:Math.random()*.6+.2,dx:Math.random()*.4-.2});
+(function snow(){
+  sx.clearRect(0,0,W,H);
+  flakes.forEach(f=>{
+    f.y+=f.s;f.x+=f.dx;
+    if(f.y>H)f.y=-10;
+    if(f.x>W)f.x=0;if(f.x<0)f.x=W;
+    sx.beginPath();sx.arc(f.x%W,f.y%H,f.r,0,Math.PI*2);
+    sx.fillStyle=`rgba(255,220,230,${f.a})`;sx.fill();
+  });
+  requestAnimationFrame(snow);
+})();
+
+// Banner particles
+const bc=document.getElementById('banner-canvas');
+function rbsz(){if(bc){bc.width=bc.offsetWidth;bc.height=bc.offsetHeight;}}
+rbsz();
+const bx=bc?bc.getContext('2d'):null;
+const bp=[];
+for(let i=0;i<40;i++)bp.push({x:Math.random()*800,y:Math.random()*180,vx:(Math.random()-.5)*.35,vy:(Math.random()-.5)*.35,r:Math.random()*1.4+.4,a:Math.random()*.5+.1});
+(function dbn(){
+  if(!bx||!bc.width)return requestAnimationFrame(dbn);
+  bx.clearRect(0,0,bc.width,bc.height);
+  bp.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>bc.width)p.vx*=-1;if(p.y<0||p.y>bc.height)p.vy*=-1;bx.beginPath();bx.arc(p.x,p.y,p.r,0,Math.PI*2);bx.fillStyle=`rgba(123,111,255,${p.a})`;bx.fill();});
+  for(let i=0;i<bp.length;i++)for(let j=i+1;j<bp.length;j++){const dx=bp[i].x-bp[j].x,dy=bp[i].y-bp[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<75){bx.beginPath();bx.moveTo(bp[i].x,bp[i].y);bx.lineTo(bp[j].x,bp[j].y);bx.strokeStyle=`rgba(123,111,255,${(1-d/75)*.12})`;bx.lineWidth=.5;bx.stroke();}}
+  requestAnimationFrame(dbn);
+})();
+
+// Typing
+const phrases=['chill là một nghệ thuật 🌙','không cần giỏi, cần không quit 💫','offline = đang nạp năng lượng ✨','blox fruit hôm nay, code ngày mai 🍀','lag ít thôi là đủ hạnh phúc 🎮'];
+let pi=0,ci=0,del=false,pau=0;
+function typeIt(){
+  const el=document.getElementById('typing-text'),ph=phrases[pi];
+  if(pau>0){pau--;setTimeout(typeIt,90);return;}
+  if(!del){el.textContent=ph.slice(0,++ci);if(ci===ph.length){del=true;pau=18;}setTimeout(typeIt,65);}
+  else{el.textContent=ph.slice(0,--ci);if(ci===0){del=false;pi=(pi+1)%phrases.length;pau=10;}setTimeout(typeIt,28);}
+}
+setTimeout(typeIt,1200);
+
+// Music
+const audio=new Audio();audio.loop=true;audio.volume=.6;
+let playing=false,volOpen=false;
+function toggleMusic(){
+  if(playing){audio.pause();playing=false;document.getElementById('music-btn').className='music-btn paused';}
+  else{audio.play().catch(()=>{});playing=true;document.getElementById('music-btn').className='music-btn playing';}
+}
+function setVol(v){audio.volume=v/100;document.getElementById('vol-pct').textContent=v+'%';}
+document.getElementById('music-btn').addEventListener('mouseover',()=>{document.getElementById('volume-panel').classList.add('visible');});
+document.getElementById('music-widget').addEventListener('mouseleave',()=>{document.getElementById('volume-panel').classList.remove('visible');});
+
+// Send msg
+function sendMsg(){
+  const v=document.getElementById('secret-msg').value.trim();if(!v)return;
+  document.getElementById('secret-msg').value='';
+  document.getElementById('secret-msg').placeholder='Đã gửi! Cảm ơn bạn 💜';
+  setTimeout(()=>{document.getElementById('secret-msg').placeholder='Send anything you want, I will read all';},3000);
+}
+
+// Lanyard
+const ID='905628589712609310';
+let spTick=null;
+function fmtMs(ms){const s=Math.max(0,Math.floor(ms/1000));return`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;}
+
+function setStatus(s){
+  const el=document.getElementById('status-icon');
+  el.className='status-icon-box '+(s==='online'?'online':s==='idle'?'idle':s==='dnd'?'dnd':'');
+}
+
+function renderActivity(acts){
+  const game=acts.find(a=>a.type===0);
+  const card=document.getElementById('activity-card');
+  if(!game){card.innerHTML='<span style="font-family:\'Fira Code\',monospace;font-size:.65rem;color:var(--muted);font-style:italic;">Không có hoạt động...</span>';return;}
+  let img='';
+  if(game.application_id&&game.assets?.large_image)
+    img=`<img src="https://cdn.discordapp.com/app-assets/${game.application_id}/${game.assets.large_image}.png" style="width:42px;height:42px;border-radius:6px;object-fit:cover;flex-shrink:0;">`;
+  card.innerHTML=`<div style="display:flex;align-items:center;gap:10px;">${img}<div><div style="font-size:.6rem;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin-bottom:2px;">Playing</div><div style="font-size:.82rem;font-weight:600;color:var(--text);">${game.name}</div><div style="font-family:'Fira Code',monospace;font-size:.65rem;color:var(--muted);margin-top:2px;">${game.details||game.state||''}</div></div></div>`;
+}
+
+function renderSpotify(sp){
+  const card=document.getElementById('listening-card');
+  if(!sp){card.innerHTML='<span style="font-family:\'Fira Code\',monospace;font-size:.65rem;color:var(--muted);font-style:italic;">Chưa nghe gì...</span>';clearInterval(spTick);return;}
+  card.innerHTML=`<div style="display:flex;align-items:center;gap:10px;"><img src="${sp.album_art_url||''}" style="width:42px;height:42px;border-radius:6px;object-fit:cover;flex-shrink:0;"><div style="flex:1;min-width:0;"><div style="font-size:.6rem;text-transform:uppercase;letter-spacing:.12em;color:#1db954;margin-bottom:2px;">🎵 Spotify</div><div style="font-size:.82rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sp.song}</div><div style="font-family:'Fira Code',monospace;font-size:.65rem;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sp.artist}</div><div style="height:3px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:6px;overflow:hidden;"><div id="sp-fill" style="height:100%;background:#1db954;border-radius:2px;width:0%;transition:width .5s linear;"></div></div><div style="display:flex;justify-content:space-between;font-family:'Fira Code',monospace;font-size:.58rem;color:var(--muted);margin-top:2px;"><span id="sp-cur">0:00</span><span id="sp-end">0:00</span></div></div></div>`;
+  clearInterval(spTick);
+  spTick=setInterval(()=>{
+    const now=Date.now(),el=now-sp.timestamps.start,tot=sp.timestamps.end-sp.timestamps.start;
+    const fill=document.getElementById('sp-fill');const cur=document.getElementById('sp-cur');const end=document.getElementById('sp-end');
+    if(fill)fill.style.width=Math.min(100,(el/tot)*100)+'%';
+    if(cur)cur.textContent=fmtMs(el);
+    if(end)end.textContent=fmtMs(tot);
+  },500);
+}
+
+function handleLanyard(d){
+  setStatus(d.discord_status);
+  renderActivity(d.activities||[]);
+  renderSpotify(d.listening_to_spotify?d.spotify:null);
+  const u=d.discord_user;if(!u)return;
+  if(u.avatar){
+    const ext=u.avatar.startsWith('a_')?'gif':'webp';
+    const url=`https://cdn.discordapp.com/avatars/${u.id}/${u.avatar}.${ext}?size=256`;
+    document.getElementById('discord-avatar').src=url;
+    document.getElementById('splash-avt').src=url;
+  }
+  if(u.banner){
+    const ext=u.banner.startsWith('a_')?'gif':'webp';
+    document.getElementById('banner-img').src=`https://cdn.discordapp.com/banners/${u.id}/${u.banner}.${ext}?size=600`;
+  }
+  document.getElementById('discord-displayname').textContent=u.global_name||u.username;
+  document.getElementById('discord-username').textContent='@'+u.username;
+  document.getElementById('splash-title').textContent=u.global_name||u.username;
+}
+
+// Lanyard REST API — fetch mỗi 10 giây
+async function fetchLanyard(){
+  try{
+    const res=await fetch(`https://api.lanyard.rest/v1/users/${ID}`);
+    const json=await res.json();
+    if(json.success)handleLanyard(json.data);
+  }catch(e){console.log('Lanyard fetch error:',e);}
+}
+fetchLanyard();
+setInterval(fetchLanyard,10000);
+</script>
+</body>
+</html>
